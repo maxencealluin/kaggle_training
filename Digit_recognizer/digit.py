@@ -1,10 +1,10 @@
 import pandas as pd
-from math import sqrt
-# import keras
 import numpy as np
 import matplotlib.pyplot as plt
-
+from math import sqrt
 from PIL import Image
+
+random_seed = 42
 
 def read_data(path, detail = 0, label_exist = 1):
     train_df = pd.read_csv(path)
@@ -31,7 +31,7 @@ def visualize_sample(data, nb = 20):
         img = Image.fromarray(img)
         plt.subplot(nb / 10 + 1 ,10, i + 1)
         plt.imshow(img)
-        plt.axis("off") 
+        plt.axis("off")
         plt.subplots_adjust(wspace=0)
     plt.show()
 
@@ -50,30 +50,65 @@ def count_classes(labels):
 train_df, train_data, train_labels = read_data("data/train.csv", 0, label_exist = 1)
 test_df, test_data = read_data("data/test.csv", 0, label_exist = 0)
 
-train_data = np.array(train_data)
-test_data = np.array(test_data)
+train_data = np.array(train_data, dtype=np.float64)
+test_data = np.array(test_data, dtype=np.float64)
 
 train_labels = np.array(train_labels['label'])
 # visualize_sample(train_data, 50)
 # count_classes(train_labels)
 
-from keras.models import Sequential
-from keras.layers import Dense
+#Normalizing
+train_data = train_data / 255.0;
+test_data = test_data / 255.0;
+
+train_data = train_data.reshape(-1, 28, 28, 1);
+test_data = test_data.reshape(-1, 28, 28, 1);
+
+print(train_data.shape)
+
+import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+
+train_data, X_val, train_labels, Y_val = train_test_split(train_data, train_labels, test_size = 0.1, random_state=random_seed)
+
 import keras
 
 one_hot_labels = keras.utils.to_categorical(train_labels, num_classes=10)
+Y_val = keras.utils.to_categorical(Y_val, num_classes=10)
 
-#Model
+from keras.models import Sequential
+from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, AveragePooling2D
+
+# #Model 1
+# model = Sequential()
+# model.add(Conv2D(32, kernel_size = 3, activation = 'relu'))
+# model.add(Conv2D(16, kernel_size = 3, activation = 'relu'))
+# model.add(Conv2D(8, kernel_size = 3, padding ="same", activation = 'relu'))
+# model.add(Flatten())
+# model.add(Dense(64, input_dim = 576, activation = 'relu'))
+# model.add(Dense(64, input_dim = 64, activation = 'relu'))
+# model.add(Dense(32, input_dim = 64, activation = 'relu'))
+# model.add(Dense(32, input_dim = 32, activation = 'relu'))
+# model.add(Dense(16, input_dim = 32, activation = 'relu'))
+# model.add(Dense(10, input_dim = 16, activation = 'softmax'))
+#
+
+#Model 2 type: Lenet 5
 model = Sequential()
-model.add(Dense(64, input_dim = 784, activation = 'relu'))
-model.add(Dense(64, input_dim = 64, activation = 'relu'))
-model.add(Dense(32, input_dim = 64, activation = 'relu'))
-model.add(Dense(32, input_dim = 32, activation = 'relu'))
-model.add(Dense(16, input_dim = 32, activation = 'relu'))
-model.add(Dense(10, input_dim = 16, activation = 'softmax'))
+model.add(Conv2D(6, kernel_size = 5, padding = "same", activation = 'relu'))
+model.add(AveragePooling2D((2,2), strides = 2));
+model.add(Conv2D(16, kernel_size = 5, activation = 'relu'))
+model.add(AveragePooling2D((2,2), strides = 2));
+model.add(Flatten())
+model.add(Dense(120, activation = 'relu'))
+model.add(Dense(84, input_dim = 120, activation = 'relu'))
+model.add(Dense(10, input_dim = 84, activation = 'softmax'))
+
+
 model.compile(optimizer = 'adam', loss='categorical_crossentropy', metrics = ['accuracy'])
 
-model.fit(train_data, one_hot_labels, epochs = 20, batch_size = 32)
+model.fit(train_data, one_hot_labels, epochs = 20, batch_size = 64, validation_data = (X_val, Y_val), verbose = 1)
 
 #Save submission
 test_labels = model.predict(test_data)
