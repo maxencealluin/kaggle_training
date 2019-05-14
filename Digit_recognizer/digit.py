@@ -70,7 +70,7 @@ import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 
-train_data, X_val, train_labels, Y_val = train_test_split(train_data, train_labels, test_size = 0.1, random_state=random_seed)
+train_data, X_val, train_labels, Y_val = train_test_split(train_data, train_labels, test_size = 0.2, random_state=random_seed)
 
 import keras
 
@@ -97,13 +97,13 @@ from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, AveragePooling2D,
 #Model 2 type: Lenet 5
 model = Sequential()
 model.add(Conv2D(12, kernel_size = 5, padding = "same", activation = 'relu'))
-model.add(AveragePooling2D((2,2), strides = 2));
-model.add(Dropout(rate = 0.1))
+model.add(MaxPooling2D((3,3), strides = 2))
+# model.add(Dropout(rate = 0.1))
 model.add(Conv2D(32, kernel_size = 5, activation = 'relu'))
-model.add(AveragePooling2D((2,2), strides = 2));
-model.add(Dropout(rate = 0.1))
+model.add(MaxPooling2D((3,3), strides = 2))
+# model.add(Dropout(rate = 0.1))
 model.add(Flatten())
-model.add(Dropout(rate = 0.5))
+model.add(Dropout(rate = 0.3))
 model.add(Dense(120, activation = 'relu'))
 model.add(Dropout(rate = 0.5))
 model.add(Dense(84, input_dim = 120, activation = 'relu'))
@@ -113,11 +113,15 @@ model.add(Dense(10, input_dim = 84, activation = 'softmax'))
 
 model.compile(optimizer = 'adam', loss='categorical_crossentropy', metrics = ['accuracy'])
 
-model.fit(train_data, one_hot_labels, epochs = 10, batch_size = 64, validation_data = (X_val, Y_val), verbose = 1)
+model.fit(train_data, one_hot_labels, epochs = 60, batch_size = 64, validation_data = (X_val, Y_val), verbose = 1)
+
+import os
 
 #Save submission
 test_labels = model.predict(test_data)
 results = np.argmax(test_labels, axis = 1)
+if (os.path.exists('submission.txt')):
+    os.remove('submission.txt')
 with open('submission.txt', 'w') as file:
     file.write("ImageId,Label\n")
     for i, result in enumerate(results):
