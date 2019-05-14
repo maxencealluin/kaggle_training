@@ -78,7 +78,7 @@ one_hot_labels = keras.utils.to_categorical(train_labels, num_classes=10)
 Y_val = keras.utils.to_categorical(Y_val, num_classes=10)
 
 from keras.models import Sequential
-from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, AveragePooling2D
+from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, AveragePooling2D, Dropout
 
 # #Model 1
 # model = Sequential()
@@ -96,19 +96,24 @@ from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, AveragePooling2D
 
 #Model 2 type: Lenet 5
 model = Sequential()
-model.add(Conv2D(6, kernel_size = 5, padding = "same", activation = 'relu'))
+model.add(Conv2D(12, kernel_size = 5, padding = "same", activation = 'relu'))
 model.add(AveragePooling2D((2,2), strides = 2));
-model.add(Conv2D(16, kernel_size = 5, activation = 'relu'))
+model.add(Dropout(rate = 0.1))
+model.add(Conv2D(32, kernel_size = 5, activation = 'relu'))
 model.add(AveragePooling2D((2,2), strides = 2));
+model.add(Dropout(rate = 0.1))
 model.add(Flatten())
+model.add(Dropout(rate = 0.5))
 model.add(Dense(120, activation = 'relu'))
+model.add(Dropout(rate = 0.5))
 model.add(Dense(84, input_dim = 120, activation = 'relu'))
+model.add(Dropout(rate = 0.3))
 model.add(Dense(10, input_dim = 84, activation = 'softmax'))
 
 
 model.compile(optimizer = 'adam', loss='categorical_crossentropy', metrics = ['accuracy'])
 
-model.fit(train_data, one_hot_labels, epochs = 20, batch_size = 64, validation_data = (X_val, Y_val), verbose = 1)
+model.fit(train_data, one_hot_labels, epochs = 10, batch_size = 64, validation_data = (X_val, Y_val), verbose = 1)
 
 #Save submission
 test_labels = model.predict(test_data)
@@ -118,3 +123,10 @@ with open('submission.txt', 'w') as file:
     for i, result in enumerate(results):
         line = str(i + 1) + ',' + str(result) + '\n'
         file.write(line)
+    print("Write successfull")
+
+confusion_mtx = confusion_matrix(np.argmax(Y_val, axis = 1), np.argmax(model.predict(X_val), axis = 1))
+
+import seaborn as sns
+sns.heatmap(confusion_mtx, annot=True,  fmt="d", vmin=0, vmax=20)
+plt.show()
