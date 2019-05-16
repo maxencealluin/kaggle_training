@@ -58,11 +58,11 @@ train_labels = np.array(train_labels['label'])
 # count_classes(train_labels)
 
 #Normalizing
-train_data = train_data / 255.0;
-test_data = test_data / 255.0;
+train_data = train_data / 255.0
+test_data = test_data / 255.0
 
-train_data = train_data.reshape(-1, 28, 28, 1);
-test_data = test_data.reshape(-1, 28, 28, 1);
+train_data = train_data.reshape(-1, 28, 28, 1)
+test_data = test_data.reshape(-1, 28, 28, 1)
 
 print(train_data.shape)
 
@@ -70,7 +70,7 @@ import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 
-train_data, X_val, train_labels, Y_val = train_test_split(train_data, train_labels, test_size = 0.2, random_state=random_seed)
+train_data, X_val, train_labels, Y_val = train_test_split(train_data, train_labels, test_size = 0.15, random_state=random_seed)
 
 import keras
 
@@ -97,16 +97,16 @@ from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D, AveragePooling2D,
 #Model 2 type: Lenet 5
 model = Sequential()
 model.add(Conv2D(12, kernel_size = 5, padding = "same", activation = 'relu'))
-model.add(MaxPooling2D((3,3), strides = 2))
+model.add(MaxPooling2D((3,3), strides = (2,2)))
 # model.add(Dropout(rate = 0.1))
-model.add(Conv2D(32, kernel_size = 5, activation = 'relu'))
-model.add(MaxPooling2D((3,3), strides = 2))
+model.add(Conv2D(32, kernel_size = 5, padding = "same", activation = 'relu'))
+model.add(MaxPooling2D((3,3), strides = (2,2)))
 # model.add(Dropout(rate = 0.1))
 model.add(Flatten())
-model.add(Dropout(rate = 0.3))
-model.add(Dense(120, activation = 'relu'))
 model.add(Dropout(rate = 0.5))
-model.add(Dense(84, input_dim = 120, activation = 'relu'))
+model.add(Dense(160, activation = 'relu'))
+model.add(Dropout(rate = 0.5))
+model.add(Dense(84, input_dim = 160, activation = 'relu'))
 model.add(Dropout(rate = 0.3))
 model.add(Dense(10, input_dim = 84, activation = 'softmax'))
 
