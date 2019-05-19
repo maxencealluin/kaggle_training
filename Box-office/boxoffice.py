@@ -70,8 +70,18 @@ def prepare_data(df):
 df = pd.read_csv("train.csv")
 X_train, Y_train = prepare_data(df)
 
+X_train.columns = X_train.columns.astype(str)
+X_train= X_train.sort_index(axis = 1)
+
+
 df_test = pd.read_csv("test.csv")
 X_test, Y_test = prepare_data(df_test)
+
+X_test.columns = X_test.columns.astype(str)
+X_test= X_test.sort_index(axis = 1)
+
+# X_test = X_test.reindex(sorted(X_test.columns), axis=1)
+
 
 for col in X_test.columns:
     if col not in X_train.columns:
@@ -91,11 +101,17 @@ Y_train = np.ravel(np.array(Y_train))
 
 #models
 #1) regressor tree
-from sklearn import svm
 from sklearn.ensemble import RandomForestRegressor
 
-model = RandomForestRegressor(random_state=42, n_estimators=300, verbose=1)
-model.fit(X_train, Y_train)
+model_rf = RandomForestRegressor(random_state=42, n_estimators=300, verbose=1)
+model_rf.fit(X_train, Y_train)
+
+#2) xgboost
+from xgboost import XGBRegressor
+
+model_xgb = XGBRegressor(n_estimators=100, learning_rate=0.08, gamma=0, subsample=0.75,
+                           colsample_bytree=1, max_depth=7)
+model_xgb.fit(X_train, Y_train)
 
 #rate model
 from math import sqrt, log
@@ -103,13 +119,18 @@ from math import sqrt, log
 def RMSD(y_pred, y_true):
     result = 0
     for pred, truth in zip(y_pred, y_true['revenue']):
-        diff = log(pred) - log(truth)
-        result += diff * diff
+        if (pred > 0 and truth >= 0):
+            diff = log(pred) - log(truth)
+            result += diff * diff
     return sqrt(result / len(y_pred))
 
+Y_pred = model_rf.predict(X_val)
+print("Random forest : RMSD : " + str(RMSD(Y_pred, Y_val)))
+
+Y_pred = model_xgb.predict(X_val)
+print("XGBoost : RMSD : " + str(RMSD(Y_pred, Y_val)))
+
 from sklearn.metrics import confusion_matrix
-Y_pred = model.predict(X_val)
-print("RMSD : " + str(RMSD(Y_pred, Y_val)))
 # confusion_mtx = confusion_matrix(Y_val, Y_pred)
 
 # import matplotlib.pyplot as plt
@@ -118,7 +139,8 @@ print("RMSD : " + str(RMSD(Y_pred, Y_val)))
 # plt.show()
 
 # predict and save submission
-results = model.predict(X_test)
+
+results = model_xgb.predict(X_test)
 
 import os
 
